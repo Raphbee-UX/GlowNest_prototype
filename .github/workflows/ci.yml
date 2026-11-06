@@ -15,3 +15,21 @@ jobs:
       - run: npm install
       - run: npm run typecheck
       - run: npm run build
+      - name: Smoke-test storefront routes and lead endpoint
+        run: |
+          npm run start > /tmp/glownest-next.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 30); do
+            if curl --silent --fail http://localhost:3000/ >/dev/null; then break; fi
+            sleep 2
+          done
+          for route in / /shop /contact /products/vitamin-c-brightening-serum /products/hydrating-daily-moisturizer /products/gentle-renewal-cleanser /robots.txt /sitemap.xml; do
+            curl --silent --show-error --fail "http://localhost:3000$route" >/dev/null
+          done
+          curl --silent --show-error --fail http://localhost:3000/contact | grep -q "Send enquiry"
+          invalid_status=$(curl --silent --output /tmp/glownest-invalid.json --write-out "%{http_code}" -X POST http://localhost:3000/api/leads -H "Content-Type: application/json" -d '{"name":"A","email":"invalid","message":"short","contactConsent":false}')
+          test "$invalid_status" = "400"
+          missing_status=$(curl --silent --output /tmp/glownest-missing.json --write-out "%{http_code}" -X POST http://localhost:3000/api/leads -H "Content-Type: application/json" -d '{"name":"GlowNest Tester","email":"tester@example.com","message":"Please send me product information.","contactConsent":true,"marketingConsent":false}')
+          test "$missing_status" = "503"
+          grep -q "not configured" /tmp/glownest-missing.json
