@@ -1,0 +1,1 @@
+"use client";import{useCart}from"./cart-provider";export default function CartTrigger(){const{count,openCart}=useCart();return <button className="cart-trigger" onClick={openCart}>Bag <span>{count}</span></button>}
