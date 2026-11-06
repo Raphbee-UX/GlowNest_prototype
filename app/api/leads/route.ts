@@ -1,0 +1,9 @@
+import {NextRequest,NextResponse} from "next/server";export const runtime="nodejs";const clean=(v:unknown,n=2000)=>typeof v==="string"?v.trim().slice(0,n):"";
+export async function POST(req:NextRequest){let b:Record<string,unknown>;try{b=await req.json()}catch{return NextResponse.json({error:"Please submit a valid enquiry."},{status:400})}
+if(clean(b.website,200))return NextResponse.json({ok:true});
+const name=clean(b.name,120),email=clean(b.email,254),phone=clean(b.phone,40),message=clean(b.message,2000);
+if(!name||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||message.length<10)return NextResponse.json({error:"Please provide your name, a valid email, and a message of at least 10 characters."},{status:400});
+const webhook=process.env.N8N_WEBHOOK_URL;if(!webhook)return NextResponse.json({error:"Enquiry delivery is not configured yet. Please try again later."},{status:503});
+try{const payload={name,email,phone,product:clean(b.product,160),message,budget:clean(b.budget,80),timeline:clean(b.timeline,80),marketingConsent:b.marketingConsent===true,enquiryType:clean(b.enquiryType,40)||"general",source:clean(b.source,300)||"/",submittedAt:new Date().toISOString()};
+const upstream=await fetch(webhook,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload),cache:"no-store",signal:AbortSignal.timeout(10000)});
+if(!upstream.ok)return NextResponse.json({error:"Our enquiry service is temporarily unavailable. Please try again shortly."},{status:502});return NextResponse.json({ok:true});}catch{return NextResponse.json({error:"We couldn't reach our enquiry service. Please try again shortly."},{status:502})}}

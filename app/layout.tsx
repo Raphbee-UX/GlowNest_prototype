@@ -1,0 +1,3 @@
+import type {Metadata} from "next";import "./globals.css";import Header from "@/components/header";import Footer from "@/components/footer";
+export const metadata:Metadata={title:{default:"GlowNest Skincare — Everyday care, thoughtfully made",template:"%s | GlowNest"},description:"Thoughtful everyday skincare, made to feel like a small ritual of care.",icons:{icon:"/favicon.jpg"},openGraph:{title:"GlowNest Skincare",description:"Everyday care. Thoughtfully made.",type:"website"}};
+export default function RootLayout({children}:{children:React.ReactNode}){return <html lang="en"><body><Header/>{children}<Footer/></body></html>}
